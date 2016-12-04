@@ -17,22 +17,15 @@ end
 $last = 5
 $code = Array.new
 
-# u, d, l, r functions
 FNS = {
-  'U' => -3,
-  'D' => 3,
-  'L' => -1,
-  'R' => 1
+  "U" => lambda { if $last > 3 then $last -= 3 else false end },
+  "D" => lambda { if $last < 7 then $last += 3 else false end },
+  "L" => lambda { if ($last + 2) % 3 != 0 then $last -= 1 else false end },
+  "R" => lambda { if $last % 3 != 0 then $last += 1 else false end }
 }
 
-NOTE.each { |char|
-  char.each_char { |ins|
-    newloc = $last + FNS[ins]
-    if newloc > 0 and newloc < 10
-      $last = newloc
-    end
-  }
+NOTE.each do |str|
+  str.each_char { |char| FNS[char].call }
   $code.push $last
-}
-
+end
 puts "code: #{$code.join ''}"
