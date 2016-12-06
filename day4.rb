@@ -24,7 +24,7 @@ class Room
       # etc.
       v * 26 + 123 - k.codepoints[0]
     }.to_h.keys.join('').reverse
-    return checksum.start_with? @checksum
+    checksum.start_with? @checksum
   end
 
   def sector_id
@@ -42,7 +42,7 @@ class Room
         decr_name += char
       end
     end
-    return decr_name
+    decr_name
   end
 end
 
@@ -1033,7 +1033,7 @@ INPUT.each do |room_name|
   room = Room.new(room_name)
   if room.real?
     total_sector_id += room.sector_id
-    if room.decrypted_name.include? "pole" then puts "result: #{room.sector_id}" end
+    if room.decrypted_name.include? 'pole' then puts "result: #{room.sector_id}" end
   end
 end
 

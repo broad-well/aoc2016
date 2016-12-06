@@ -1,19 +1,16 @@
 # Day 5 of Advent Of Code, 2016
-INPUT = false ? 'abc' : 'ojvtpuvg'
+INPUT = 'ojvtpuvg'
 
 require 'digest'
 require 'set'
 
-part2 = false
-fast = false
-
-if ARGV.include? 'fast' then fast = true end
-if ARGV.include? 'part2' then part2 = true end
+part2 = ARGV.include? 'part2'
+fast = ARGV.include? 'fast'
 
 i = 0
-if part2 then $c = Set.new end
+$c = Set.new if part2
 pwd = part2 ? '00000000' : ''
-loop {
+loop do
   md5 = Digest::MD5.hexdigest INPUT + i.to_s
   if !fast && i % 50 == 0 then print "Fresh MD5: #{md5}\r" end
   #print "#{INPUT + i.to_s} => #{md5}\r"
@@ -29,8 +26,8 @@ loop {
       end
     end
   end
-  if (part2 ? $c.length == 8 : pwd.length == 8) then break end
+  break if part2 ? $c.length == 8 : pwd.length == 8
   i+=1
-}
+end
 
 puts "\e[1mpassword: #{pwd}\e[0m"
