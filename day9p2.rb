@@ -7,20 +7,18 @@ else
 end
 
 def expand(str)
-  out = ''
+  out = 0
   count = 0
   while count < str.length do
     if str[count] == '('
       subcount = count + 1
       subcount += 1 until str[subcount] == ')'
       len, iter = str[(count + 1)..subcount - 1].split('x').map(&:to_i)
-      prose_repeat = expand str[subcount+1..subcount+len]
-      iter.times do
-        out += prose_repeat
-      end
+      prose_repeat_size = expand str[subcount+1..subcount+len]
+      out += prose_repeat_size * iter
       count = subcount + len + 1
     else
-      out += str[count]
+      out += 1
       count += 1
     end
   end

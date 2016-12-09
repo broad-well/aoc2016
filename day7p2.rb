@@ -35,12 +35,13 @@ def supports_ssl(line)
 
   supernet_seq.each do |seq|
     (seq.length - 2).times { |i|
-      criteria.push flip_it(seq[i..i+2]) if seq[i] == seq[i+2] && seq[i] != seq[i+1]
+      criteria.push flip_it(seq[i..i + 2]) \
+                           if seq[i] == seq[i + 2] && seq[i] != seq[i + 1]
     }
   end
   hypernet_seq.each do |seq|
     (seq.length - 2).times { |i|
-      return true if criteria.include? seq[i..i+2]
+      return true if criteria.include? seq[i..i + 2]
     }
   end
   false
