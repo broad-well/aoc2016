@@ -1,37 +1,54 @@
 # Day 11 of Advent of Code, 2016
 require 'set'
-$floors = [Set.new(['pr-g', 'pr-m']), Set.new(['co-g', 'cu-g', 'ru-g', 'pl-g']),
-           Set.new(['co-m', 'cu-m', 'ru-m', 'pl-m']), Set.new]
-$floors = [['hy-m', 'li-m'], ['hy-g'], ['li-g'], []]
+require 'thread'
+require 'fiber'
+
+$floors = [['pr-g', 'pr-m'], ['co-g', 'cu-g', 'ru-g', 'pl-g'],
+           ['co-m', 'cu-m', 'ru-m', 'pl-m'], []]
+$floors = [['hy-m', 'li-m'], ['hy-g'], ['li-g'], []] if ARGV.include? 'use-example'
 $elevator = 0
 
-def is_generator(str)
-  str[-1] == 'g'
+def pair_element(elem)
+  elem[0..-2] + (elem.end_with?('-m') ? 'g' : 'm')
 end
 
-def validate_move(move, custom_elev = nil, custom_floors = nil)
+def validate_move_custom(move, custom_elev, custom_floors)
   # useful variables
-  next_floor = (custom_elev == nil ? $elevator : custom_elev) +
-               (move[0] == 'u' ? 1 : -1)
-  future_next_floor = (custom_floors == nil ? $floors[next_floor] :
-                         custom_floors[next_floor]) + move.split('_')[1..-1]
+  next_floor = custom_elev + (move[0] == 'u' ? 1 : -1)
+  moving_elems = move.split('_')[1..-1]
+  future_next_floor = custom_floors[next_floor] + moving_elems
   # criteria 0: microchip accessible to elevator for recharge
-  return false unless future_next_floor.to_a.join.include?('-m')
+  return false unless future_next_floor.join.include?('-m')
 
   # criteria 1: no microchips in conflict when not attached to their generators
-  # ab-m ab-g we-m tw-g
-  hypo_nf = future_next_floor.dup.to_a
-  hypo_del = []
-  hypo_nf.length.times do |i|
-    hypo_del += [hypo_nf[i], hypo_nf[i].sub('-m', '-g')] if
-      hypo_nf[i].end_with?('-m') && hypo_nf.include?(hypo_nf[i].sub('-m', '-g'))
+  # ab-m ab-g we-m
+  return true unless future_next_floor.join.include? '-g' # no generators
+#  trail = []
+#  has_pairs = false
+#  future_next_floor.each do |elem|
+#    if trail.include? pair_element(elem)
+#      has_pairs = true
+#      trail.delete pair_element(elem)
+#    else
+#      trail << elem
+#    end
+#  end
+#  return false if trail.map { |e| e.end_with?('m') }.include?(true) &&
+#                  (has_pairs ||
+#                   trail.map { |e| e.end_with?('g') }.include?(true))
+#
+#  return true
+#
+  # criteria 1 experimental
+  future_next_floor.each do |elem|
+    return false if elem.end_with?('-m') &&
+                                   !future_next_floor.include?(pair_element(elem))
   end
-  hypo_diff = hypo_nf - hypo_del
-  hypo_diff_has_gen = false
-  hypo_diff.each { |elem| hypo_diff_has_gen = true if elem.end_with?('-g') }
-  hypo_diff.each { |elem| return false if elem.end_with?('-m') && hypo_diff_has_gen }
-
   true
+end
+
+def validate_move(move)
+  validate_move_custom(move, $elevator, $floors)
 end
 
 # action format: (u/d)_pr-g_pr-m (index of current floor to take)
@@ -46,7 +63,7 @@ def permutations_cond(floors, elevator)
   # filter
   bad = []
   actions.each { |action| bad.push(action) unless
-                 validate_move(action, elevator, floors) }
+                 validate_move_custom(action, elevator, floors) }
   actions - bad
 end
 
@@ -57,12 +74,13 @@ def act(action)
   toks[1..-1].each { |elem| $floors[$elevator] << elem }
 end
 
-def virtual_act(elev, floors_orig, action)
-  floors = floors_orig.dup
+def virtual_act(elev, floors, action)
+#  puts "virtual_act elev=#{elev} floors_orig=#{floors_orig} action=#{action}"
   toks = action.split '_'
   toks[1..-1].each { |elem| floors[elev].delete(elem) }
   elev += toks[0] == 'u' ? 1 : -1
   toks[1..-1].each { |elem| floors[elev] << elem }
+#  puts "virtual_act end, elev=#{elev} floors=#{floors}"
   [elev, floors]
 end
 
@@ -72,22 +90,63 @@ def reverse_act(action)
   new_act
 end
 
-def internal_max(elev, floors, prev_act, external = false, level = 0)
+def done(floors)
+  floors[0..2].join.length == 0
+end
+
+if ARGV.length == 0
+  puts 'Missing intelligence value'
+  exit 1
+end
+
+$intelligence = ARGV[0].to_i
+INTEL_DIV = 3
+def internal_max(elev, floors, prev_act, level = 0)
+  use_threads = level <= 1 && !ARGV.include?('flat')
   step_scores = {}
+  ss_access = Mutex.new
+  threads = [] if use_threads
   permts = permutations_cond(floors, elev)
-  puts "#{' '*level}level=#{level}, permts_len=#{permts.count}, elev=#{elev} floors=#{floors} prev=#{prev_act}"
-  return -10_000 if level > 10
+#  puts "#{' '*level}level=#{level}, permts_len=#{permts.count}, elev=#{elev} floors=#{floors} prev=#{prev_act}"
   permts.delete reverse_act prev_act
-  return floors[3].count * 10 + 10 - level if permts.empty?
-  permts.each do |action|
-    new_elev, new_floors = virtual_act(elev, floors, action)
-    step_scores[action] = internal_max(new_elev,
-                                       new_floors.dup, action, false, level + 1)
+  if permts.empty? || level > $intelligence
+    score = $intelligence - level
+    4.times { |i| score += floors[3 - i].count * (3 - i) * 5 }
+    return score
   end
-  external ? step_scores.key(step_scores.values.max) : step_scores.values.max
+  return 100_000 - level * 100 if done floors
+  return permts[0] if permts.count == 1 && level == 0
+  permts.each do |action|
+    new_elev, new_floors = virtual_act(elev, floors.map(&:dup), action)
+    if use_threads
+      threads << Thread.new do
+        result = internal_max(new_elev,
+                              new_floors, action, level + 1)
+        ss_access.synchronize do
+          step_scores[action] = result
+          print "\e[2K#{Thread.current} done (#{step_scores.count}/#{permts.count}) lvl #{level}\r"
+        end
+      end
+    else
+      step_scores[action] = internal_max(new_elev,
+                                         new_floors, action, level + 1)
+    end
+  end
+  threads.each(&:join) if use_threads
+  level.zero? ? step_scores.key(step_scores.values.max) : step_scores.values.max
 end
 
 def max
-  internal_max($elevator, $floors, 'u-NA', true)
+  internal_max($elevator, $floors, 'u-NA')
 end
-max
+
+stepcount = 0
+until $floors[0..2].map(&:empty?).all?
+  step = max
+  p step
+  act step
+  stepcount += 1
+  puts "floors now: #{$floors}"
+end
+
+puts "In #{stepcount} steps"
