@@ -136,56 +136,8 @@ def internal_max(elev, floors, prev_act, level = 0)
   level.zero? ? step_scores.key(step_scores.values.max) : step_scores.values.max
 end
 
-class StateHash < Hash
-  def initialize
-    super
-  end
-
-  def [](state)
-    method(:[]).super_method.call(state_tostr(state))
-  end
-
-  def []=(state, val)
-    method(:[]=).super_method.call(state_tostr(state), val.to_i)
-  end
-
-  def include?(state)
-    method(:include?).super_method.call(state_tostr(state))
-  end
-
-  def get(elev, floors)
-    self[[elev, floors]]
-  end
-
-  private
-
-  def state_tostr(state)
-    floorstr = ''
-    state[1].each do |floor|
-      floorstr += floor.join('') + ','
-    end
-    state[0].to_s + floorstr[0..-2]
-  end
-end
-
-def bfs # theoretical confidence
-  queue = [[$elevator, $floors.map(&:dup).dup]]
-  dist_prev = StateHash.new
-  dist_prev[queue[0]] = 0
-
-  loop do
-    current_e, current_f = queue.pop
-    current_d = dist_prev.get(current_e, current_f)
-    return current_d if done current_f
-    permutations_cond(current_f, current_e).each do |action|
-      new_state = virtual_act(current_e, current_f.map(&:dup).dup, action)
-      next if dist_prev.include?(new_state)
-      dist_prev[new_state] = current_d + 1
-      queue.insert(0, new_state)
-      #print "queue.count=#{queue.count} dist_prev.count=#{dist_prev.count}"\
-      #      " current_d=#{current_d}\r"
-    end
-  end
+def bfs
+  
 end
 
 def max

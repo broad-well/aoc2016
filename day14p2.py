@@ -38,7 +38,7 @@ while len(padkeys) < 64:
         repeat_criteria.append((i + 1000, rep3, digest))
 
     if i % 100 == 0:
-        print(i, end="\r") 
+        print(i, end="\r")
     i += 1
 
 print("Answer: {}".format(padkeys[63]))
