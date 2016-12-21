@@ -1,0 +1,8 @@
+swap position 4 w p 0
+swap letter d w l b
+reverse positions 0 th 4
+rotate left 1 s
+move p 1 to p 4
+move p 3 to p 0
+rotate based o p o l b
+rotate based o p o l d
