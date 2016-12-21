@@ -136,8 +136,25 @@ def internal_max(elev, floors, prev_act, level = 0)
   level.zero? ? step_scores.key(step_scores.values.max) : step_scores.values.max
 end
 
+# new algorithmic system
+# State representation: 01202002201
+# elevator floor + pair_floor (12, 02, 00, 22, 01)
+
+def state_permutations(state)
+  curfloor = state[0].to_i
+  curpairs = []
+  i = 1
+  while i < state.length
+    curpairs += state[i..i+1].chars.map(&:to_i)
+  end
+end
+
 def bfs
-  
+  queue = [[0, '00012121212']]
+  until queue.empty?
+    curdist, curstate = queue.shift
+
+  end
 end
 
 def max
